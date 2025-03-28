@@ -2,6 +2,7 @@ import dash
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
 import pandas as pd
+import os  # Um die Umgebungsvariable für den Port zu nutzen
 
 # Dash App initialisieren
 app = dash.Dash(__name__)
@@ -124,5 +125,6 @@ def update_dashboard(selected_term):
     )
 
 
+# Portbindung für Render.com sicherstellen
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8050)))
