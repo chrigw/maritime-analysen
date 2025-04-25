@@ -77,6 +77,17 @@ search_queries = [
     "Maritime Messen und Kongresse",
     "Hafenentwicklung und -logistik",
     "Autonome Schifffahrt Deutschland",
+    "Digitale Zwillinge Schifffahrt",
+    "Cybersecurity maritime Wirtschaft"
+    "Maritime Ausbildungsberufe",
+    "Requalifizierung maritime Branche",
+    "EU-Emissionshandel Schifffahrt",
+    "Zero-Emission-Schiffe",
+    "Schiffsrecycling Deutschland",
+    "Supply Chain Resilienz Seehandel",
+    "Chinesische Beteiligungen deutsche Häfen",
+    "Nationale Hafenstrategie Deutschland",
+    "Offshore-Wind und maritime Synergien",
 ]
 search_queries.sort()
 
@@ -108,17 +119,24 @@ app.layout = html.Div([
             style={
                 'fontFamily': font_family,
                 'backgroundColor': 'white',
-                'border': f'2px solid {color_palette[1]}',  # Coralle
+                'border': f'2px solid {color_palette[2]}',  # Dunkleres Blau
                 'borderRadius': '6px',
                 'padding': '10px',
                 'fontSize': '16px',
                 'color': color_palette[0],
-                'boxShadow': '0 2px 6px rgba(0,0,0,0.1)'
+                'boxShadow': '0 2px 6px rgba(0,0,0,0.15)'
             }
         )
-    ], style={'padding-top': '20px', 'marginBottom': '30px'}),
+    ], style={
+        'padding': '15px',
+        'marginBottom': '30px',
+        'backgroundColor': '#f9f9f9',
+        'borderRadius': '8px',
+        'boxShadow': '0 2px 4px rgba(0,0,0,0.05)'
+    }),
 
     html.H3(id='selected-term', style={"color": color_palette[2], "fontFamily": font_family}),
+    html.Div(id='results-table', style={'marginBottom': '20px'}),
     html.Div(id='plots-container', style={'margin-bottom': '30px'}),
     html.H3("Top Topics", style={"color": color_palette[1], "fontFamily": font_family}),
     html.Div(id='top-topics-table'),
@@ -151,7 +169,8 @@ def load_csv(folder, filename, height="300px"):
     [
         Output('selected-term', 'children'),
         Output('plots-container', 'children'),
-        Output('top-topics-table', 'children')
+        Output('top-topics-table', 'children'),
+        Output('results-table', 'children')
     ],
     [Input('search-dropdown', 'value')]
 )
@@ -162,6 +181,7 @@ def update_dashboard(selected_term):
     extreme_table = load_csv("extreme_sentiments", f"{search_term_formatted}_extreme_sentiments.csv", height="200px")
     token_table = load_csv("token_sentiments", f"{search_term_formatted}_token_sentiments.csv", height="200px")
     top_topics_table = load_csv("top_topics", f"{search_term_formatted}_top_topics.csv")
+    results_table = load_csv("results", f"{search_term_formatted}_results.csv", height="150px")
 
     # Plots laden
     plots = []
@@ -169,6 +189,11 @@ def update_dashboard(selected_term):
         image_url = f"{IMAGE_BASE_URL}/{plot_type}/{search_term_formatted}_{plot_type}.png"
         try:
             if requests.get(image_url).status_code == 200:
+                if plot_type == "wordcloud":
+                    plots.append(html.Div([
+                        html.H5("Aggregierte Ergebnisse", style={"color": color_palette[1], "fontFamily": font_family}),
+                        results_table
+                    ]))
                 plots.append(html.Div([
                     html.H4(plot_type.replace("_", " ").capitalize(),
                             style={"color": color_palette[0], "fontFamily": font_family}),
@@ -190,7 +215,8 @@ def update_dashboard(selected_term):
     return (
         f"Suchbegriff: {selected_term}",
         plots,
-        top_topics_table
+        top_topics_table,
+        html.Div()  # results_table wird jetzt direkt vor Wordcloud eingebunden
     )
 
 # Server starten
