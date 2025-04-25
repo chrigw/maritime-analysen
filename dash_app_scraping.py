@@ -2,52 +2,84 @@ import dash
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
 import pandas as pd
-import os  # Um die Umgebungsvariable für den Port zu nutzen
+import os
+import requests
 
 # Dash App initialisieren
 app = dash.Dash(__name__)
-app.title = "Analyse und Visualisierung von Online-Suchergebnissen zum Thema maritime Branche"
+app.title = "Analyse und Visualisierung von Online-Suchergebnissen zur maritimen Branche"
 
-# Basis-URLs für GitHub-Daten
+# === Design: Farben & Schriftart ===
+font_family = "Barlow Condensed, sans-serif"
+color_palette = [
+    "#10225A",  # Blau
+    "#D1655B",  # Coralle
+    "#376179",  # Dunkleres Blau
+    "#005B96",  # Blau
+    "#4B85A6",  # Aqua
+    "#939498",  # Grau
+]
+
+# === Logo DMZ ===
+logo_url = "https://raw.githubusercontent.com/chrigw/regulations/c35d31e13ee72dd06a221bb0dd5afd4d1e270f1b/logo_dmz.png"
+link_url = "https://www.deutsches-maritimes-zentrum.de"
+
+logo_html = html.Div([
+    html.A([
+        html.Img(src=logo_url, style={'height': '80px'})
+    ], href=link_url, target="_blank")
+], style={
+    'position': 'fixed',
+    'top': '10px',
+    'right': '10px',
+    'background-color': 'white',
+    'padding': '8px',
+    'border-radius': '8px',
+    'box-shadow': '0 0 6px rgba(0,0,0,0.2)',
+    'zIndex': 9999
+})
+
+# GitHub-Basis-URLs
 GITHUB_RAW_BASE = "https://raw.githubusercontent.com/chrigw/maritime-analysen/main"
 IMAGE_BASE_URL = f"{GITHUB_RAW_BASE}/images"
 DATA_BASE_URL = f"{GITHUB_RAW_BASE}/data"
 
-# Liste der verfügbaren Suchbegriffe
+# Suchbegriffe definieren
 search_queries = [
-    "Deutsches Maritimes Zentrum DMZ",
+    "Deutsches Maritimes Zentrum e.V.",
     "Maritime Branche Deutschland",
+    "Maritime Sicherheit Deutschland",
+    "Maritime Förderprogramme Europa",
+    "Nachhaltigkeit und Klimawandel maritime Branche Deutschland",
+    "Technologischer Wandel maritime Branche Deutschland",
+    "Fachkräftemangel maritime Branche Deutschland",
+    "Elon Musk",
     "Deutsche Schifffahrt",
     "Deutsche Seehäfen",
-    "Fachkräftemangel deutsche maritime Branche",
     "Wettbewerbsfähigkeit deutsche maritime Branche",
     "Demografie und Nachwuchssicherung deutsche maritime Branche",
-    "Deutsche maritime Sicherheit",
-    "KI-Methoden in maritimen Behörden Deutschlands",
-    "Maritime Förderprogramme Europa",
-    "Nachhaltigkeit und Klimawandel maritime Branche",
-    "Technologischer Wandel maritime Branche",
+    "KI-Methoden in der maritimen Branche Deutschlands",
+    "Donald Trump",
     "Alternative Handelsrouten Arktis",
     "Dekarbonisierung Schifffahrt",
     "Alternative Treibstoffe Schifffahrt",
-    "Elon Musk",
-    "Donald Trump",
-    "Dieter Janecek",                   # Als Koordinator der Bundesregierung für maritime Wirtschaft und Tourismus ist er für die strategische Ausrichtung und Förderung der maritimen Branche in Deutschland verantwortlich.
-    "Robert Habeck",                    # In seiner Funktion als Bundesminister für Wirtschaft und Klimaschutz spielt er eine Schlüsselrolle bei der Umsetzung der Energiewende, die erhebliche Auswirkungen auf die maritime Wirtschaft hat, insbesondere im Bereich der Offshore-Windenergie.
-    "Volker Wissing",                   # Als Bundesminister für Digitales und Verkehr ist er für die Infrastrukturentwicklung zuständig, einschließlich der Hafenlogistik und der Digitalisierung der maritimen Wirtschaft.
-    "Angela Titzrath",                  # Als Vorsitzende der Hamburger Hafen und Logistik AG (HHLA) und Präsidentin des Zentralverbands der deutschen Seehafenbetriebe (ZDS) setzt sie sich für die Interessen der Hafenwirtschaft ein und fordert beispielsweise eine erhöhte staatliche Unterstützung für die Hafeninfrastruktur.
-    "Friedrich Merz",                   # Als Vorsitzender der CDU/CSU-Fraktion im Bundestag beeinflusst er die politische Debatte über wirtschaftliche Rahmenbedingungen, die auch die maritime Wirtschaft betreffen, beispielsweise durch Forderungen nach Bürokratieabbau und Infrastrukturinvestitionen.
-    "Maritime Agenda 2025",             # Eine Langfriststrategie der deutschen Bundesregierung zur Förderung von Forschung und Innovation in der maritimen Wirtschaft.
-    "Maritime Energiewende",            # Initiativen zur Reduktion von Treibhausgasemissionen in der Schifffahrt, einschließlich der Entwicklung alternativer Antriebstechnologien wie LNG und Akkumulatoren.
-    "Offshore-Windkraft",               # Der Ausbau von Offshore-Windparks als Beitrag zur Energiewende und die damit verbundenen Chancen für die maritime Wirtschaft.
-    "Maritime Digitalisierung",         # Die Integration digitaler Technologien in der Schifffahrt, bekannt als "Maritim 4.0", zur Steigerung von Effizienz und Wettbewerbsfähigkeit.
-    "Maritime Sicherheit",              # Strategien zur Sicherung von Seewegen und Schutz vor maritimen Bedrohungen.
-    "Schiffbauzulieferer",              # Die Bedeutung der Zulieferindustrie im Schiffbau und ihre Rolle im internationalen Wettbewerb
-    "Maritime Messen und Kongresse",    # Veranstaltungen wie die SMM (Shipbuilding, Machinery & Marine Technology), die als weltweit führende Messe der maritimen Industrie gilt.
-    "Hafenentwicklung und -logistik",   # Maßnahmen zur Steigerung der Wettbewerbsfähigkeit deutscher Häfen und Optimierung logistischer Prozesse.
+    "Dieter Janecek",
+    "Robert Habeck",
+    "Volker Wissing",
+    "Angela Titzrath",
+    "Friedrich Merz",
+    "Maritime Agenda 2025",
+    "Maritime Energiewende",
+    "Offshore-Windkraft",
+    "Maritime Digitalisierung",
+    "Maritime Sicherheit",
+    "Schiffbauzulieferer",
+    "Maritime Messen und Kongresse",
+    "Hafenentwicklung und -logistik",
+    "Autonome Schifffahrt Deutschland",
 ]
+search_queries.sort()
 
-# Reihenfolge der Abbildungen
 plot_types = [
     "wordcloud",
     "sentiments",
@@ -58,29 +90,63 @@ plot_types = [
     "country_distribution"
 ]
 
-# Layout des Dashboards
+# Layout
 app.layout = html.Div([
-    html.H1("Analyse und Visualisierung von Online-Suchergebnissen zum Thema maritime Branche"),
-
-    # Dropdown zur Auswahl des Suchbegriffs
-    dcc.Dropdown(
-        id='search-dropdown',
-        options=[{'label': term, 'value': term} for term in search_queries],
-        value=search_queries[0],  # Standardwert
+    logo_html,
+    html.Div(style={'height': '100px'}),
+    html.H1(
+        "Analyse und Visualisierung von Online-Suchergebnissen zur maritimen Branche",
+        style={"color": color_palette[0], "fontFamily": font_family}
     ),
 
-    html.H3(id='selected-term'),
+    html.Div([
+        html.Label("Suchbegriff auswählen:", style={"color": color_palette[2], "fontFamily": font_family, 'fontSize': '18px'}),
+        dcc.Dropdown(
+            id='search-dropdown',
+            options=[{'label': term, 'value': term} for term in search_queries],
+            value=search_queries[0],
+            style={
+                'fontFamily': font_family,
+                'backgroundColor': 'white',
+                'border': f'2px solid {color_palette[1]}',  # Coralle
+                'borderRadius': '6px',
+                'padding': '10px',
+                'fontSize': '16px',
+                'color': color_palette[0],
+                'boxShadow': '0 2px 6px rgba(0,0,0,0.1)'
+            }
+        )
+    ], style={'padding-top': '20px', 'marginBottom': '30px'}),
 
-    # Plots (werden dynamisch hinzugefügt)
-    html.Div(id='plots-container', style={'display': 'block', 'margin-bottom': '30px'}),
-
-    # Tabelle für Top Topics
-    html.H3("Top Topics"),
+    html.H3(id='selected-term', style={"color": color_palette[2], "fontFamily": font_family}),
+    html.Div(id='plots-container', style={'margin-bottom': '30px'}),
+    html.H3("Top Topics", style={"color": color_palette[1], "fontFamily": font_family}),
     html.Div(id='top-topics-table'),
-])
+], style={"fontFamily": font_family, 'padding': '20px'})
 
 
-# Callback zur Aktualisierung der Visualisierungen & Tabelle
+# Hilfsfunktion für CSV-Ladung
+def load_csv(folder, filename, height="300px"):
+    url = f"{DATA_BASE_URL}/{folder}/{filename}"
+    try:
+        response = requests.get(url)
+        if response.status_code != 200:
+            return html.Div()
+        df = pd.read_csv(url)
+        return dash_table.DataTable(
+            data=df.to_dict('records'),
+            columns=[{"name": i, "id": i} for i in df.columns],
+            style_table={'overflowX': 'auto', 'maxHeight': height, 'overflowY': 'auto'},
+            style_cell={
+                'textAlign': 'left', 'padding': '5px', 'fontSize': 14,
+                'fontFamily': font_family, 'color': color_palette[0]
+            },
+            style_header={'fontWeight': 'bold', 'backgroundColor': color_palette[4], 'color': 'white'}
+        )
+    except:
+        return html.Div()
+
+# Callback
 @app.callback(
     [
         Output('selected-term', 'children'),
@@ -92,39 +158,41 @@ app.layout = html.Div([
 def update_dashboard(selected_term):
     search_term_formatted = selected_term.replace(" ", "_")
 
-    # 🔹 Plots laden
-    plot_elements = [
-        html.Div([
-            html.H4(plot_type.replace("_", " ").capitalize()),
-            html.Img(src=f"{IMAGE_BASE_URL}/{plot_type}/{search_term_formatted}_{plot_type}.png",
-                     style={'width': '80%', 'margin-bottom': '20px'})
-        ]) for plot_type in plot_types
-    ]
-
-    # 🔹 CSV-Daten für Top Topics laden
-    def load_csv(folder, filename):
-        url = f"{DATA_BASE_URL}/{folder}/{filename}"
-        try:
-            df = pd.read_csv(url)
-            return dash_table.DataTable(
-                data=df.to_dict('records'),
-                columns=[{"name": i, "id": i} for i in df.columns],
-                style_table={'overflowX': 'auto'},
-                style_cell={'textAlign': 'left', 'padding': '5px', 'fontSize': 14},
-                style_header={'fontWeight': 'bold'}
-            )
-        except Exception as e:
-            return html.P(f"Fehler beim Laden der Daten: {str(e)}")
-
+    # Tabellen vorbereiten
+    extreme_table = load_csv("extreme_sentiments", f"{search_term_formatted}_extreme_sentiments.csv", height="200px")
+    token_table = load_csv("token_sentiments", f"{search_term_formatted}_token_sentiments.csv", height="200px")
     top_topics_table = load_csv("top_topics", f"{search_term_formatted}_top_topics.csv")
+
+    # Plots laden
+    plots = []
+    for plot_type in plot_types:
+        image_url = f"{IMAGE_BASE_URL}/{plot_type}/{search_term_formatted}_{plot_type}.png"
+        try:
+            if requests.get(image_url).status_code == 200:
+                plots.append(html.Div([
+                    html.H4(plot_type.replace("_", " ").capitalize(),
+                            style={"color": color_palette[0], "fontFamily": font_family}),
+                    html.Img(src=image_url, style={'width': '80%', 'margin-bottom': '10px'})
+                ]))
+                if plot_type == "sentiments":
+                    plots.append(html.Div([
+                        html.H5("Token Sentiments Tabelle", style={"color": color_palette[1], "fontFamily": font_family}),
+                        token_table
+                    ]))
+                elif plot_type == "extreme_sentiments":
+                    plots.append(html.Div([
+                        html.H5("Extreme Sentiments Tabelle", style={"color": color_palette[1], "fontFamily": font_family}),
+                        extreme_table
+                    ]))
+        except:
+            continue
 
     return (
         f"Suchbegriff: {selected_term}",
-        plot_elements,
+        plots,
         top_topics_table
     )
 
-
-# Portbindung für Render.com sicherstellen
+# Server starten
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8050)))
