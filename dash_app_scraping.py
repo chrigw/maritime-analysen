@@ -5,11 +5,12 @@ import pandas as pd
 import os
 import requests
 
+
 # Dash App initialisieren
 app = dash.Dash(__name__)
 app.title = "Analyse und Visualisierung von Online-Suchergebnissen zur maritimen Branche"
 
-# === Design: Farben & Schriftart ===
+# Design: Farben & Schriftart
 font_family = "Barlow Condensed, sans-serif"
 color_palette = [
     "#10225A",  # Blau
@@ -20,7 +21,7 @@ color_palette = [
     "#939498",  # Grau
 ]
 
-# === Logo DMZ ===
+# Logo DMZ
 logo_url = "https://raw.githubusercontent.com/chrigw/regulations/c35d31e13ee72dd06a221bb0dd5afd4d1e270f1b/logo_dmz.png"
 link_url = "https://www.deutsches-maritimes-zentrum.de"
 
@@ -33,9 +34,11 @@ logo_html = html.Div([
     'top': '10px',
     'right': '10px',
     'background-color': 'white',
-    'padding': '8px',
+    'padding': '20px',
+    'lineHeight': '1.6',             # Zeilenabstand erhöhen
     'border-radius': '8px',
     'box-shadow': '0 0 6px rgba(0,0,0,0.2)',
+    'maxWidth': '1300px',            # Layoutbreite einschränken
     'zIndex': 9999
 })
 
@@ -143,6 +146,8 @@ app.layout = html.Div([
     html.Div(id='plots-container', style={'margin-bottom': '30px'}),
     html.H3("Top Topics", style={"color": color_palette[1], "fontFamily": font_family}),
     html.Div(id='top-topics-table'),
+    html.H3("SEO-Briefing Auswertung", style={"color": color_palette[1], "fontFamily": font_family}),
+    html.Div(id='seo-briefing-table'),
 ], style={"fontFamily": font_family, 'padding': '20px'})
 
 
@@ -173,7 +178,8 @@ def load_csv(folder, filename, height="300px"):
         Output('selected-term', 'children'),
         Output('plots-container', 'children'),
         Output('top-topics-table', 'children'),
-        Output('results-table', 'children')
+        Output('results-table', 'children'),
+        Output('seo-briefing-table', 'children')
     ],
     [Input('search-dropdown', 'value')]
 )
@@ -185,6 +191,7 @@ def update_dashboard(selected_term):
     token_table = load_csv("token_sentiments", f"{search_term_formatted}_token_sentiments.csv", height="200px")
     top_topics_table = load_csv("top_topics", f"{search_term_formatted}_top_topics.csv")
     results_table = load_csv("results", f"{search_term_formatted}_results.csv", height="150px")
+    seo_table = load_csv("seo_briefings", f"{search_term_formatted}_meta.csv", height="300px")
 
     # Plots laden
     plots = []
@@ -215,11 +222,24 @@ def update_dashboard(selected_term):
         except:
             continue
 
+    # Zeitreihen-Bilder einfügen
+    time_series_url = f"{IMAGE_BASE_URL}/time_series/{search_term_formatted}_time_series.png"
+    try:
+        if requests.get(time_series_url).status_code == 200:
+            plots.append(html.Div([
+                html.H4("Verlauf der Treffer über die Zeit",
+                        style={"color": color_palette[0], "fontFamily": font_family}),
+                html.Img(src=time_series_url, style={'width': '80%', 'margin-bottom': '10px'})
+            ]))
+    except:
+        pass
+
     return (
         f"Suchbegriff: {selected_term}",
         plots,
         top_topics_table,
-        html.Div()  # results_table wird jetzt direkt vor Wordcloud eingebunden
+        html.Div(),  # results_table wird jetzt direkt vor Wordcloud eingebunden
+        seo_table
     )
 
 # Server starten
