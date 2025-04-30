@@ -88,6 +88,9 @@ search_queries = [
     "Chinesische Beteiligungen deutsche Häfen",
     "Nationale Hafenstrategie Deutschland",
     "Offshore-Wind und maritime Synergien",
+    "https://dmz-maritim.de/handlungsfelder/",
+    "Patrick Schnieder",
+    "German inland waterway transport",
 ]
 search_queries.sort()
 
