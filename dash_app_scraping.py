@@ -88,7 +88,7 @@ search_queries = [
     "Chinesische Beteiligungen deutsche Häfen",
     "Nationale Hafenstrategie Deutschland",
     "Offshore-Wind und maritime Synergien",
-    "https://dmz-maritim.de/handlungsfelder/",
+    "dmz-maritim.de_handlungsfelder",
     "Patrick Schnieder",
     "German inland waterway transport",
 ]
