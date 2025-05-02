@@ -22,7 +22,7 @@ color_palette = [
 ]
 
 # Logo DMZ
-logo_url = "https://raw.githubusercontent.com/chrigw/regulations/c35d31e13ee72dd06a221bb0dd5afd4d1e270f1b/logo_dmz.png"
+logo_url = "https://raw.githubusercontent.com/chrigw/maritime-karten/a0a4b7daa13f049bda865d92f0539c1756c063e8/D-DMZ-Logo-4C%20HOCH.jpg"
 link_url = "https://www.deutsches-maritimes-zentrum.de"
 
 logo_html = html.Div([
